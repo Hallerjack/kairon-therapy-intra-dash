@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import './index.css';
 
-function Dashboard() {
+const mesActual = new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
+
+function Dashboard({ usuario, onLogout }) {
   // Estado para simular qué sección está activa
   const [activeTab, setActiveTab] = useState('resumen');
+
+  const iniciales = `${usuario.nombres?.[0] ?? ''}${usuario.apellidos?.[0] ?? ''}`.toUpperCase();
 
   return (
     <div className="dashboard-container">
@@ -39,13 +43,13 @@ function Dashboard() {
 
         <div className="sidebar-footer">
           <div className="user-info">
-            <div className="avatar">CP</div>
+            <div className="avatar">{iniciales}</div>
             <div>
-              <strong>Coordinador</strong>
-              <small>Ver Perfil</small>
+              <strong>{usuario.nombres} {usuario.apellidos}</strong>
+              <small>{usuario.rol === 'administrador' ? 'Administrador' : 'Terapeuta'}</small>
             </div>
           </div>
-          <button className="btn-logout"><i className="fa-solid fa-arrow-right-from-bracket"></i> Salir</button>
+          <button className="btn-logout" onClick={onLogout}><i className="fa-solid fa-arrow-right-from-bracket"></i> Salir</button>
         </div>
       </aside>
 
@@ -60,7 +64,7 @@ function Dashboard() {
             {activeTab === 'informes' && 'Generación de Informes'}
           </h2>
           <div className="header-actions">
-            <span className="date-badge">Agosto 2026</span>
+            <span className="date-badge">{mesActual}</span>
           </div>
         </header>
 
