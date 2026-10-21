@@ -1,11 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Dashboard from './Dashboard';
+import { api } from './api';
 import './index.css';
 
 function App() {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [usuario, setUsuario] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Al cargar la página, recupera la sesión si la cookie sigue vigente
+  useEffect(() => {
+    api('/auth/me')
+      .then(setUsuario)
+      .catch(() => setUsuario(null))
+      .finally(() => setCheckingSession(false));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,35 +28,29 @@ function App() {
     setError(''); 
     
     try {
-      // 1. Enviamos la petición POST al backend local
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const data = await api('/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(credentials)
+        body: JSON.stringify(credentials),
       });
-
-      const data = await response.json();
-
-      // 2. Evaluamos la respuesta
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al iniciar sesión');
-      }
-
-      // 3. Si todo va bien, guardamos el Token y cambiamos el estado
-      localStorage.setItem('kairon_token', data.token); // Guardamos el token de seguridad
-      localStorage.setItem('kairon_user', JSON.stringify(data.usuario)); // Opcional: guardamos datos del usuario
-      setIsAuthenticated(true); // Cambiamos la vista al Dashboard
-
+      setUsuario(data.usuario);
     } catch (err) {
       setError(err.message);
     }
   };
 
+  const handleLogout = async () => {
+    await api('/auth/logout', { method: 'POST' }).catch(() => {});
+    setUsuario(null);
+    setCredentials({ email: '', password: '' });
+  };
+
+  if (checkingSession) {
+    return null;
+  }
+
   // Si el usuario ya está autenticado, mostramos el Dashboard
-  if (isAuthenticated) {
-    return <Dashboard />;
+  if (usuario) {
+    return <Dashboard usuario={usuario} onLogout={handleLogout} />;
   }
 
   // Si no está autenticado, mostramos el Login
